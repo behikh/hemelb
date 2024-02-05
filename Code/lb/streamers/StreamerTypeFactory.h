@@ -6,6 +6,8 @@
 #ifndef HEMELB_LB_STREAMERS_STREAMERTYPEFACTORY_H
 #define HEMELB_LB_STREAMERS_STREAMERTYPEFACTORY_H
 
+#include <omp.h>
+
 #include "lb/streamers/Common.h"
 #include "lb/streamers/BulkStreamer.h"
 
@@ -50,7 +52,9 @@ namespace hemelb::lb
                               geometry::FieldData& latDat,
                               lb::MacroscopicPropertyCache& propertyCache)
         {
-            for (site_t siteIndex = firstIndex; siteIndex < (firstIndex + siteCount); siteIndex++)
+            site_t siteIndex;
+            #pragma omp parallel for private(siteIndex)
+            for (siteIndex = firstIndex;siteIndex < (firstIndex + siteCount); siteIndex++)
             {
                 geometry::Site<geometry::FieldData> site = latDat.GetSite(siteIndex);
                 VarsType hydroVars(site);
