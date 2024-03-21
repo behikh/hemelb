@@ -11,6 +11,7 @@
 #include <limits>
 #include <cstdlib>
 #include <boost/uuid/uuid_io.hpp>
+#include <omp.h>
 
 #include "configuration/SimConfig.h"
 #include "configuration/SimBuilder.h"
@@ -57,6 +58,14 @@ namespace hemelb
         // Use it to initialise self
         auto builder = configuration::SimBuilder(*simConfig);
         log::Logger::Log<log::Info, log::Singleton>("Beginning Initialisation.");
+        
+        int num_threads = 0;
+        #pragma omp parallel
+        {
+          num_threads = omp_get_num_threads();
+        }
+        log::Logger::Log<log::Info, log::Singleton>("Number of threads is %i", num_threads);
+        
         builder(*this);
     }
 

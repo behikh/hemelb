@@ -55,7 +55,7 @@ namespace hemelb::lb {
     }
 
     template <typename C>
-    using DefaultStreamer = BulkStreamer<C>;
+    using DefaultStreamer = StreamerTypeFactory<NullLink<C>,NullLink<C>>;
 
     template <typename C>
     using DefaultWallStreamer = decltype(detail::get_default_wall_streamer<C>(std::declval<InitParams&>()));
