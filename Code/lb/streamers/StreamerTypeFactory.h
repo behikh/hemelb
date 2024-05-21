@@ -53,7 +53,7 @@ namespace hemelb::lb
                               lb::MacroscopicPropertyCache& propertyCache)
         {   
             site_t siteIndex;
-            #pragma omp parallel for private(siteIndex)
+            #pragma omp parallel for private(siteIndex) schedule(auto)
             for (siteIndex = firstIndex; siteIndex < (firstIndex + siteCount); siteIndex++)
             {
                 geometry::Site<geometry::FieldData> site = latDat.GetSite(siteIndex);
@@ -94,7 +94,7 @@ namespace hemelb::lb
                       lb::MacroscopicPropertyCache& propertyCache)
         {   
             site_t siteIndex;
-            #pragma omp parallel for private(siteIndex)
+            #pragma omp parallel for private(siteIndex) schedule(auto)
             for (siteIndex = firstIndex; siteIndex < (firstIndex + siteCount); siteIndex++)
             {
                 geometry::Site<geometry::FieldData> site = latticeData.GetSite(siteIndex);
