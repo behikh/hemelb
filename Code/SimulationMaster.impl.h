@@ -11,6 +11,7 @@
 #include <limits>
 #include <cstdlib>
 #include <boost/uuid/uuid_io.hpp>
+#include <Kokkos_Core.hpp>
 
 #include "configuration/SimConfig.h"
 #include "configuration/SimBuilder.h"
@@ -97,7 +98,6 @@ namespace hemelb
   {
 
   }
-
   template<class TRAITS>
   unsigned int SimulationMaster<TRAITS>::OutputPeriod(unsigned int frequency)
   {
@@ -132,6 +132,7 @@ namespace hemelb
   void SimulationMaster<TRAITS>::RunSimulation()
   {
     log::Logger::Log<log::Info, log::Singleton>("Beginning to run simulation.");
+    Kokkos::initialize();
     timings[reporting::Timers::simulation].Start();
 
     while (simulationState->GetTimeStep() <= simulationState->GetTotalTimeSteps())
@@ -145,6 +146,7 @@ namespace hemelb
 
     timings[reporting::Timers::simulation].Stop();
     Finalise();
+    Kokkos::finalize()
   }
 
   template<class TRAITS>

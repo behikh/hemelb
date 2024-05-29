@@ -6,6 +6,7 @@
 #ifndef HEMELB_LB_STREAMERS_STREAMERTYPEFACTORY_H
 #define HEMELB_LB_STREAMERS_STREAMERTYPEFACTORY_H
 
+#include <Kokkos_Core.hpp>
 #include "lb/streamers/Common.h"
 #include "lb/streamers/BulkStreamer.h"
 
@@ -50,8 +51,8 @@ namespace hemelb::lb
                               geometry::FieldData& latDat,
                               lb::MacroscopicPropertyCache& propertyCache)
         {
-            for (site_t siteIndex = firstIndex; siteIndex < (firstIndex + siteCount); siteIndex++)
-            {
+            // Define the lambda for the Kokkos parallel for loop
+            auto lambda_func = KOKKOS_LAMBDA(const site_t siteIndex) {
                 geometry::Site<geometry::FieldData> site = latDat.GetSite(siteIndex);
                 VarsType hydroVars(site);
 
@@ -82,15 +83,18 @@ namespace hemelb::lb
                                          hydroVars,
                                          lbmParams,
                                          propertyCache);
-            }
+            };
+
+            // Use Kokkos parallel for
+            Kokkos::parallel_for("StreamAndCollide", Kokkos::RangePolicy<>(firstIndex, firstIndex + siteCount), lambda_func);
         }
 
         void PostStep(const site_t firstIndex, const site_t siteCount,
-                      const LbmParameters* lbmParams, geometry::FieldData& latticeData,
-                      lb::MacroscopicPropertyCache& propertyCache)
-        {
-            for (site_t siteIndex = firstIndex; siteIndex < (firstIndex + siteCount); siteIndex++)
-            {
+              const LbmParameters* lbmParams, geometry::FieldData& latticeData,
+              lb::MacroscopicPropertyCache& propertyCache)
+        {   
+            // Define the lambda for the Kokkos parallel for loop
+            auto lambda_func = KOKKOS_LAMBDA(const site_t siteIndex) {
                 geometry::Site<geometry::FieldData> site = latticeData.GetSite(siteIndex);
                 for (unsigned int direction = 0; direction < LatticeType::NUMVECTORS; direction++)
                 {
@@ -103,8 +107,10 @@ namespace hemelb::lb
                         ioletLinkDelegate.PostStepLink(latticeData, site, direction);
                     }
                 }
-            }
+            };
 
+            // Use Kokkos parallel for
+            Kokkos::parallel_for("PostStep", Kokkos::RangePolicy<>(firstIndex, firstIndex + siteCount), lambda_func);
         }
     };
 }

@@ -29,7 +29,7 @@ endfunction()
 # Source files in ARGN
 function(add_test_lib name)
   add_library(${name} OBJECT ${ARGN})
-  target_link_libraries(${name} PRIVATE Catch2::Catch2)
+  target_link_libraries(${name} PRIVATE Catch2::Catch2 Boost::boost)
   target_compile_definitions(${name} PUBLIC HEMELB_DOING_UNITTESTS)
 endfunction()
 
