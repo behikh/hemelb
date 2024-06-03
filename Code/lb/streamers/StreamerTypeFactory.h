@@ -82,6 +82,27 @@ namespace hemelb::lb
                                  });
         }
 
+        void PostStep(const site_t firstIndex, const site_t siteCount,
+              const LbmParameters* lbmParams, geometry::FieldData& latticeData,
+              lb::MacroscopicPropertyCache& propertyCache)
+        {
+            Kokkos::parallel_for("PostStep", Kokkos::RangePolicy<>(firstIndex, firstIndex + siteCount),
+                                 [&](const site_t siteIndex)
+                                 {
+                                     geometry::Site<geometry::FieldData> site = latticeData.GetSite(siteIndex);
+                                     for (unsigned int direction = 0; direction < LatticeType::NUMVECTORS; direction++)
+                                     {
+                                         if (can_have_wall && site.HasWall(direction))
+                                         {
+                                             wallLinkDelegate.PostStepLink(latticeData, site, direction);
+                                         }
+                                         else if (can_have_iolet && site.HasIolet(direction))
+                                         {
+                                             ioletLinkDelegate.PostStepLink(latticeData, site, direction);
+                                         }
+                                     }
+                                 });
+        }
     };
 }
 #endif
