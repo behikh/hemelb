@@ -72,6 +72,7 @@ include(codesign)
 include(mpi)
 include(HemeLbDependency)
 
+find_package(Kokkos REQUIRED)
 find_hemelb_dependency(Boost REQUIRED)
 find_hemelb_dependency(TinyXML REQUIRED)
 
@@ -83,6 +84,7 @@ find_hemelb_dependency(ZLIB REQUIRED)
 # Note this is NOT the C++ bindings, this is the C bindings from C++
 # (ensures helpful MPI implementations do not sneak the MPI 2 C++ bindings back in)
 link_libraries(MPI::MPI_CXX)
+link_libraries(Kokkos::kokkos)
 link_libraries(Boost::headers)
 
 if(HEMELB_BUILD_RBC)

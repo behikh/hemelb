@@ -146,7 +146,7 @@ namespace hemelb
 
     timings[reporting::Timers::simulation].Stop();
     Finalise();
-    Kokkos::finalize()
+    Kokkos::finalize();
   }
 
   template<class TRAITS>

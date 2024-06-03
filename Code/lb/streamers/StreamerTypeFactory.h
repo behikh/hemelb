@@ -47,71 +47,41 @@ namespace hemelb::lb
         }
 
         void StreamAndCollide(const site_t firstIndex, const site_t siteCount,
-                              const LbmParameters* lbmParams,
-                              geometry::FieldData& latDat,
+                              const LbmParameters* lbmParams, geometry::FieldData& latDat,
                               lb::MacroscopicPropertyCache& propertyCache)
         {
-            // Define the lambda for the Kokkos parallel for loop
-            auto lambda_func = KOKKOS_LAMBDA(const site_t siteIndex) {
-                geometry::Site<geometry::FieldData> site = latDat.GetSite(siteIndex);
-                VarsType hydroVars(site);
+            Kokkos::parallel_for("StreamAndCollide", Kokkos::RangePolicy<>(firstIndex, firstIndex + siteCount),
+                                 [&](const site_t siteIndex)
+                                 {
+                                     geometry::Site<geometry::FieldData> site = latDat.GetSite(siteIndex);
+                                     VarsType hydroVars(site);
 
-                ///< @todo #126 This value of tau will be updated by some kernels within the collider code (e.g. LBGKNN). It would be nicer if tau is handled in a single place.
-                hydroVars.tau = lbmParams->GetTau();
+                                     ///< @todo #126 This value of tau will be updated by some kernels within the collider code (e.g. LBGKNN). It would be nicer if tau is handled in a single place.
+                                     hydroVars.tau = lbmParams->GetTau();
 
-                collider.CalculatePreCollision(hydroVars, site);
+                                     collider.CalculatePreCollision(hydroVars, site);
+                                     collider.Collide(lbmParams, hydroVars);
 
-                collider.Collide(lbmParams, hydroVars);
+                                     for (Direction ii = 0; ii < LatticeType::NUMVECTORS; ii++)
+                                     {
+                                         if (can_have_iolet && site.HasIolet(ii))
+                                         {
+                                             ioletLinkDelegate.StreamLink(lbmParams, latDat, site, hydroVars, ii);
+                                         }
+                                         else if (can_have_wall && site.HasWall(ii))
+                                         {
+                                             wallLinkDelegate.StreamLink(lbmParams, latDat, site, hydroVars, ii);
+                                         }
+                                         else
+                                         {
+                                             bulkLinkDelegate.StreamLink(lbmParams, latDat, site, hydroVars, ii);
+                                         }
+                                     }
 
-                for (Direction ii = 0; ii < LatticeType::NUMVECTORS; ii++)
-                {
-                    if (can_have_iolet && site.HasIolet(ii))
-                    {
-                        ioletLinkDelegate.StreamLink(lbmParams, latDat, site, hydroVars, ii);
-                    }
-                    else if (can_have_wall && site.HasWall(ii))
-                    {
-                        wallLinkDelegate.StreamLink(lbmParams, latDat, site, hydroVars, ii);
-                    }
-                    else
-                    {
-                        bulkLinkDelegate.StreamLink(lbmParams, latDat, site, hydroVars, ii);
-                    }
-                }
-
-                UpdateCachePostCollision(site,
-                                         hydroVars,
-                                         lbmParams,
-                                         propertyCache);
-            };
-
-            // Use Kokkos parallel for
-            Kokkos::parallel_for("StreamAndCollide", Kokkos::RangePolicy<>(firstIndex, firstIndex + siteCount), lambda_func);
+                                     UpdateCachePostCollision(site, hydroVars, lbmParams, propertyCache);
+                                 });
         }
 
-        void PostStep(const site_t firstIndex, const site_t siteCount,
-              const LbmParameters* lbmParams, geometry::FieldData& latticeData,
-              lb::MacroscopicPropertyCache& propertyCache)
-        {   
-            // Define the lambda for the Kokkos parallel for loop
-            auto lambda_func = KOKKOS_LAMBDA(const site_t siteIndex) {
-                geometry::Site<geometry::FieldData> site = latticeData.GetSite(siteIndex);
-                for (unsigned int direction = 0; direction < LatticeType::NUMVECTORS; direction++)
-                {
-                    if (can_have_wall && site.HasWall(direction))
-                    {
-                        wallLinkDelegate.PostStepLink(latticeData, site, direction);
-                    }
-                    else if (can_have_iolet && site.HasIolet(direction))
-                    {
-                        ioletLinkDelegate.PostStepLink(latticeData, site, direction);
-                    }
-                }
-            };
-
-            // Use Kokkos parallel for
-            Kokkos::parallel_for("PostStep", Kokkos::RangePolicy<>(firstIndex, firstIndex + siteCount), lambda_func);
-        }
     };
 }
 #endif
