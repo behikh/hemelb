@@ -8,6 +8,7 @@
 #include "configuration/CommandLine.h"
 #include "debug.h"
 #include "SimulationMaster.h"
+#include <Kokkos_Core.hpp>
 
 int main(int argc, char *argv[])
 {
@@ -17,6 +18,7 @@ int main(int argc, char *argv[])
   using namespace hemelb;
   // Bring up MPI
   net::MpiEnvironment mpi(argc, argv);
+  Kokkos::initialize();
   log::Logger::Init();
   try
   {
@@ -50,5 +52,6 @@ int main(int argc, char *argv[])
     log::Logger::Log<log::Critical, log::OnePerCore>(e.what());
     mpi.Abort(-1);
   }
+  Kokkos::finalize();
   // MPI gets finalised by MpiEnv's d'tor.
 }
