@@ -97,7 +97,7 @@ namespace hemelb
   {
 
   }
-  
+
   template<class TRAITS>
   unsigned int SimulationMaster<TRAITS>::OutputPeriod(unsigned int frequency)
   {
